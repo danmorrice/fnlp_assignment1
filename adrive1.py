@@ -14,7 +14,7 @@ def extract_answers(gdict, errlog):
   _me=None
   globals().update(gdict)
   try:
-    from template import logistic_regression_model
+    from s2061990 import logistic_regression_model
     _me=logistic_regression_model.classifier_obj
   except:
     pass
