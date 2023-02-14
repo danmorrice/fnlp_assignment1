@@ -242,11 +242,11 @@ def short_answer_1_4() -> str:
     """
     return inspect.cleandoc(
         """"
-        p(b|('<s>',)) = [2-gram] 0.046511   Probability of the letter ‘b’ coming at the start of a word  
-        p(b|('b',)) = [2-gram] 0.007750     Probability of the letter ‘b’ coming after the letter ‘b’
-        backing off for ('b', 'q')          ‘q’ coming after the letter ‘b’ is never seen so you back off
-        p(q|()) = [1-gram] 0.000892         Probability of seeing the letter ‘q’
-        p(q|('b',)) = [2-gram] 0.000092     Probability of ‘q’ coming after the letter ‘b’
+        p(b|('<s>',)) = [2-gram] 0.046511   Probability of letter ‘b’ coming at start of a word  
+        p(b|('b',)) = [2-gram] 0.007750     Probability of letter ‘b’ coming after letter ‘b’
+        backing off for ('b', 'q')          ‘q’ coming after letter ‘b’ is never seen in bigram so back off to unigram
+        p(q|()) = [1-gram] 0.000892         Probability of seeing letter ‘q’ in unigram
+        p(q|('b',)) = [2-gram] 0.000092     Adjusted probability of ‘q’ coming after letter ‘b’ using back-off weight*unigram
         p(</s>|('q',)) = [2-gram] 0.010636  Probability of the letter 'q' coming at the end of a word
         7.85102054894183                    Cross entropy
         """
@@ -315,7 +315,41 @@ def essay_question():
     There is a limit of 400 words for this question.
     :return: your answer
     """
-    return inspect.cleandoc("""Your answer""")
+    return inspect.cleandoc(
+        """
+        Three problems that the question glosses over:
+        
+        What kind of language model will be used? To make entropy calculations, we need a language model that can predict the next word. 
+        Larger N-gram models provide more context than smaller N-grams, making more accurate predictions of the entropy values. 
+        This comes with a higher computational cost, however.
+        
+        What corpus is used to train the model, and what is the size of this corpus? Depending on the source of this data (is it from news articles,
+        or social media), the context will be very different and so word predictions and entropies will vary. For example, if news articles are used 
+        then the language model will be formal, contrasting a more informal language model if social media was used. A larger corpus will also give a 
+        more reliable estimate as it has more to learn from.
+        
+        Is punctuation included or not? Punctuation being included or not can massively influence a model’s prediction for the next word. For example, 
+        a period can signify the end of a sentence and thus impact the next word for the start of the sentence. Along these same lines, is left and right 
+        padding included, to signify the start and end of sentences as well?
+        
+        
+        
+        I would begin my experiment by collecting a large, formal corpus of English. I would opt for a formal corpus over 
+        something such as social media, as it is well-formed and devoid of slang, thus representing the English language better. 
+        I would use several sources from different areas to account for language variations.
+        
+	    I would preprocess this corpus by removing special characters and punctuation (as it does not contribute much to word-level entropies) 
+        and converting text to lowercase. This makes it easier for the model to process. Then, I would tokenise this corpus, using the words as tokens, 
+        and add left and right padding to the sentences. Then I would split the corpus so that 20% of it was saved for testing purposes.
+	    
+        I would train a tri-gram language model on this tokenised corpus. This provides more accuracy in entropy calculations than a bigram or 
+        unigram (due to increased context), but it is more computationally expensive. 
+        The tri-gram equation used is as follows:	
+        $P_{MLE}(w_i|w_{i-2},w_{i-1})=\frac{C(w_{i-2},w_{i-1},w_i)}{C(w_{i-2},w_{i-1})}$
+     
+	    Finally, I would calculate the entropy for each word in the corpus using the following entropy formula:
+		$H(X)=\Sigma_{x}-P(x)log_{2}P(x)$                   
+        """)
 
 
 #############################################
@@ -500,7 +534,27 @@ def open_question_2_2() -> str:
 
     Limit: 150 words for all three sub-questions together.
     """
-    return inspect.cleandoc("""Your answer""")
+    return inspect.cleandoc(
+        """
+        1. 
+        Using individual features provides a low accuracy. P (preposition) gives the highest accuracy on its own which suggest it is the most i
+        nformative for the task.
+        
+        By combining all features there is a substantial increase in accuracy. This suggests that the features capture some different aspects 
+        of the data which are relevant to classifying whether the PP attaches to NP or VP.
+
+
+        2. 
+        Accuracy from 2.1 = 79.50%.
+        Naive Bayes assumes the inputs are conditionally independent given the class, whilst the logistic regression 
+        does not make the same assumptions, allowing it to capture more complex relations.
+
+
+        3. 
+        I would advocate against this feature – it is extremely specific, capturing only a tiny subset of the data and would not generalise 
+        for data which does not contain these words, leading to extreme overfitting. It would only work if a sentence contains these words in this order.
+        """
+        )
 
 # Feature extractors used in the table:
 
@@ -533,9 +587,18 @@ def your_feature_extractor(v: str, n1: str, p:str, n2:str) -> List[Any]:
 
     :return: A list of features produced by you.
     """
-    return [("v",v), ("n1",n1), ("p",p), ("n2",n2), ("vn1", (v,n1)), ("vp", (v,p)), ("vn2", (v,n2)), ("n1p", (n1,p)), ("n1n2", (n1,n2)), ("pn2", (p,n2))]
+    return [("v",v), ("n1",n1), ("p",p), ("v_n1", (v,n1)), ("v_p", (v,p)), ("n1_p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2)), ("n1_n2_p", (n1, n2, p))]
+
     
-# n1pn2
+# 84.27 [("v",v), ("n1",n1), ("p",p), ("n2",n2), ("v_n1", (v,n1)), ("v_p", (v,p)), ("v_n2", (v,n2)), ("n_1p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2))]
+# 84.6001 [("v",v), ("n1",n1), ("p",p),  ("v_n1", (v,n1)), ("v_p", (v,p)), ("v_n2", (v,n2)), ("n1_p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2))]
+# 84.550 [("v",v), ("n1",n1), ("p",p),  ("v_n1", (v,n1)), ("v_p", (v,p)), ("v_n2", (v,n2)), ("n1_p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2)), ("v_n1_p", (v,n1,p))]
+# 84.476 [("v",v), ("n1",n1), ("p",p),  ("v_n1", (v,n1)), ("v_p", (v,p)), ("v_n2", (v,n2)), ("n1_p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2)), ("v_n1_p", (v,n1,p)), ("v_n1_n2", (v,n1,n2))]
+# 84.154 [("v",v), ("n1",n1), ("p",p), ("n2",n2), ("v_n1", (v,n1)), ("v_p", (v,p)), ("v_n2", (v,n2)), ("n1_p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2)), ("v_n1_n2", (v,n1,n2))]
+# 84.228 [("v",v), ("n1",n1), ("p",p), ("n2",n2), ("v_n1", (v,n1)), ("v_p", (v,p)), ("v_n2", (v,n2)), ("n1_p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2)), ("p_n1_n2", (p,n1,n2))]
+# 84.2040 [("v",v), ("n1",n1), ("p",p), ("n2",n2), ("v_n1", (v,n1)), ("v_p", (v,p)), ("v_n2", (v,n2)), ("n1_p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2)), ("p_n1_n2", (p,n1,n2)),  ("v_p_n2", (v,p,n2))]
+# 84.6744 [("v",v), ("n1",n1), ("p",p), ("n2",n2), ("v_n1", (v,n1)), ("v_p", (v,p)),  ("n1_p", (n1,p)), ("n1_n2", (n1,n2)), ("p_n2", (p,n2)), ("n1_n2p", (n1, n2, p))]
+
 
 # Question 2.3, part 2 [10 marks]
 def open_question_2_3() -> str:
@@ -546,7 +609,32 @@ def open_question_2_3() -> str:
 
     There is a limit of 300 words for this question.
     """
-    return inspect.cleandoc("""Your answer""")
+    return inspect.cleandoc(
+        """
+        Started by adding all of the pairs of features to test the performance of this, and it improved the accuracy. My intuition here was 
+        that the lone features might be indicative of a certain class, but by combining features into pairs, I could allow the model to capture the more complex 
+        relationships between classes and features that would otherwise be missed.
+        
+        Because of the success with pairwise combinations, I tried implementing the function with triplets and quadruplets of the features. However, by adding 
+        many of these, I decreased the accuracy of the model – I believe the increased number of features caused the model to overfit the training data. 
+        
+        I tweaked my feature templates, removing some of the pairs and adding a triplet of features instead. My intuition here was that, similarly to the 
+        pairs, adding a triplet may allow the model to capture even more complex relationships between features and classes. By removing some pairs, I ensured 
+        it wasn’t too complex and so didn’t overfit. After some trial and error, I managed to get the highest accuracy using this at 84.67%.
+
+        1:
+        “-5.680 ('p', 'of')==1 and label is 'V'”
+        This feature is informative as it has the strongest absolute weight of all the features. The presence of this feature suggests a strong negative correlation 
+        with the label “V”, meaning it is often found with the label “N”.
+
+        2:
+        “3.539 ('vp', ('assume', 'of'))==1 and label is 'V'”
+        This feature is informative as it has the strongest correlation with the label “V”. The presence of the verb “assume” now makes it indicative of a verb phrase.
+
+        3:
+        “2.625 ('n1n2', ('3', 'point'))==1 and label is 'N'”
+        Strong positive correlation with a noun phrase. This makes sense as a quantity (such as 3) can only be attributed to a noun, not a verb.
+        """)
 
 
 """
@@ -609,7 +697,7 @@ def answers():
     
 
     print("*** Part II***\n")
-    """"
+    
     print("*** Question 2.1 ***")
     naive_bayes = NaiveBayes(apply_extractor(feature_extractor_5, ppattach.tuples("training")), 0.1)
     naive_bayes_acc = compute_accuracy(naive_bayes, apply_extractor(feature_extractor_5, ppattach.tuples("devset")))
@@ -618,7 +706,8 @@ def answers():
     print("*** Question 2.2 ***")
     answer_open_question_2_2 = open_question_2_2()
     print(answer_open_question_2_2)
-
+    
+    
     print("*** Question 2.3 ***")
     training_features = apply_extractor(your_feature_extractor, ppattach.tuples("training"))
     dev_features = apply_extractor(your_feature_extractor, ppattach.tuples("devset"))
@@ -633,7 +722,7 @@ def answers():
     answer_open_question_2_3 = open_question_2_3()
     print("Answer to open question:")
     print(answer_open_question_2_3)
-    """
+    
 
 
 

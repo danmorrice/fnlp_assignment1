@@ -1,5 +1,0 @@
-Exception in answer dict value computation:
-    [(_me._weights[fid],_me._encoding.describe(fid)) for fid in _me.most_informative_features(10)] -> AttributeError("'NoneType' object has no attribute 'most_informative_features'")
-  File "/Users/danmorrice/Documents/3ThirdYear/Semester2/NaturalLanguageProcessing/assignment1/autodrive_embed.py", line 61, in safeEval
-    return eval(expr,gdict)
-  File "<string>", line 1, in <module>
